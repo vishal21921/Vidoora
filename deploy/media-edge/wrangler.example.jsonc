@@ -1,0 +1,14 @@
+{
+  "name": "vidoora-media-test",
+  "main": "worker.mjs",
+  "compatibility_date": "2026-11-02",
+  "workers_dev": true,
+  "preview_urls": false,
+  "observability": { "enabled": false },
+  "vars": {
+    "ENABLED": "false",
+    "API_ORIGIN": "https://REPLACE_WITH_HOSTED_API/",
+    "PROCESSED_BUCKET": "REPLACE_WITH_PRIVATE_PROCESSED_BUCKET"
+  },
+  "r2_buckets": [{ "binding": "MEDIA", "bucket_name": "REPLACE_WITH_PRIVATE_PROCESSED_BUCKET" }]
+}

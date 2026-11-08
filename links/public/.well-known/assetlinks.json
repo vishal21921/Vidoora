@@ -1,0 +1,14 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.vidoora.app",
+      "sha256_cert_fingerprints": [
+        "3B:97:F4:27:31:C2:F4:DF:F6:84:58:51:22:84:EB:1C:6F:22:F6:16:4B:C1:C3:D1:AE:10:2D:EA:F1:05:A5:78"
+      ]
+    }
+  }
+]

@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <meta name="description" content="Open a shared video in Vidoora.">
+  <title>Watch a shared video | Vidoora</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <main aria-labelledby="title">
+    <div class="brand"><span aria-hidden="true">▶</span> Vidoora</div>
+    <h1 id="title">Watch a shared video</h1>
+    <p id="message">Open the video in the Vidoora Android app. You can watch without an account.</p>
+    <div class="actions">
+      <a id="open" class="primary" hidden>Open in Vidoora</a>
+      <a id="install" class="secondary" href="https://play.google.com/store/apps/details?id=com.vidoora.app"
+         target="_blank" rel="noopener noreferrer">Get it on Google Play <span aria-hidden="true">↗</span></a>
+    </div>
+    <section id="return" hidden aria-label="After installing">
+      <p><strong>New to Vidoora?</strong> After installing, return to this tab and tap <strong>Open in Vidoora</strong>, or copy the link and paste it in Vidoora.</p>
+      <button id="copy" type="button">Copy video link</button>
+      <p id="feedback" role="status"></p>
+    </section>
+    <noscript><p>Open the original link on your Android phone after installing Vidoora.</p></noscript>
+  </main>
+  <script src="/open.js" defer></script>
+</body>
+</html>

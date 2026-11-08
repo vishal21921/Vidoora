@@ -1,0 +1,52 @@
+# Vidoora dedicated demo video ads — 29 October 2026
+
+## Approved behavior
+Watch is restored in My Videos for server-verified owners. Guests and other accounts still use complete active shared links. Upload/Profile/queue management has no displayed ads. Every playback entry, including an uploader watching their own video, uses the same video-ad path. This supersedes the prior management-only navigation restriction and the app-wide ordinary-interstitial budget.
+
+A new player session requests a skippable demo pre-roll and VMAP breaks at content offsets 10, 20, 30 minutes, etc., only with more than ten seconds remaining. Past mid-rolls before an explicit resume position are omitted; a new session still has its pre-roll. This is video timeline scheduling, not elapsed app time: pausing/backgrounding does not advance cues; seeking is handled by IMA/Media3's ad groups rather than an app timer. Failed/unavailable ads can be skipped by the SDK so content is not permanently blocked. SDK skip/click/close behavior is retained. Neither an impression nor ad earnings are guaranteed. There is no implemented ad-free subscription or billing entitlement.
+
+## Implementation
+- app/build.gradle.kts: media3-exoplayer-ima matches existing Media3 1.4.1; explicit IMA SDK 3.40.0 replaces its deprecated transitive 3.33.0, with required core-library desugaring 2.1.5. The corrected native smoke below exercised SDK playback with software codecs; physical-device/native hardware-codec acceptance remains separate. No unrelated player upgrade. Debug demo flag stays enabled and release stays OFF.
+- feature/ads/VideoAdSchedule.kt: bounded numeric-only cue generator and VMAP XML with Google's public single skippable sample tag; random correlators contain no user/video identifiers.
+- VideoAdSession.kt: one IMA loader/local ad-state ID per player session, main-thread lifecycle, 8-second VAST/media/preload timeouts. Consent permission is sampled at playback preparation; no late consent-triggered overlay. Retried content reuses ad state. No live URL configuration.
+- Authenticated content remains HLS from AuthenticatedMediaDataSource. Ad tags/media use a separate standard DefaultMediaSourceFactory with no account headers/share capability/client. No private URL/title/account/video ID is deliberately attached to ad requests. SDK device-data behavior still requires production privacy review.
+- Stable SDK overlay is reattached to the active portrait/fullscreen PlayerView; ad taps/skip controls retain native handling. Double-tap seeking is disabled while an ad plays.
+- VideoPlayerScreen.kt and WatchProgressSession.kt: verified duration supplies cues; checkpoints use content position/duration and never an ad's timeline. Content READY is handled both on playback-state and ad/content transition events. Portrait banner hides during video ads/fullscreen.
+- ViewerAdsController.kt: retained UMP/privacy controls and demo banner initialization; ordinary interstitial preloading/show and global cooldown/session budget are removed. Old ViewerAdPolicy.kt/tests are replaced with VMAP schedule/gesture tests.
+- NavGraph.kt: restored owner Watch uses freshly server-verified isOwner/canPlay. Guest/nonowner link entry gate remains; signed-in player entry is still freshly authorized by WatchProgressSession.open and private media routes. Backend files are unchanged. Watch navigates into the player pre-roll rather than displaying a separate ordinary interstitial.
+
+An initial combined restoration command was rejected by automatic review as a possible private-access change. Inspection established PlaybackService.allowed already authorizes authenticated owners and requires active capabilities for nonowners; the smaller accepted change retained guest link checks and existing fresh server authorization. No authorization bypass or backend permission change was made.
+
+## Verification
+New tests validate namespace-correct VMAP, short/long/invalid duration boundaries, resume cue filtering, independent session schedules and no ad-seek gesture. Existing uploader viewer eligibility/resume tests remain. Native UI checks have been updated for restored Watch; an opt-in VideoAdsSmokeTest uses Google's public stock.mp4 and demo pre-roll only, with actual UMP permission and no user/backend data. It records actual ad-start/content-ready outcomes separately. Its default invocation skips unless videoAdsSmoke=true. Results are appended after execution; compilation alone does not verify video-ad playback.
+
+## Remaining production setup
+IMA/VAST video ads need compatible video-ad inventory/ad-server configuration (for example Google Ad Manager), not an AdMob interstitial-unit ID. AdMob account approval does not configure that inventory. Google sample tags are not publisher earnings. Live inventory, approved content/audience eligibility, consent/privacy/store declarations and paid ad-free purchase verification require separate setup. Keep all release requests disabled until those gates are handled. Do not paste credentials or private video links into diagnostic logs/chat.
+
+## Official sources
+- https://developer.android.com/media/media3/exoplayer/ad-insertion
+- https://developers.google.com/interactive-media-ads/docs/sdks/android/client-side/tags
+- https://developers.google.com/interactive-media-ads/docs/sdks/android/client-side/get-started
+- https://support.google.com/admob/answer/6201362
+- https://raw.githubusercontent.com/androidx/media/1.4.1/libraries/exoplayer_ima/src/main/java/androidx/media3/exoplayer/ima/ImaAdsLoader.java
+
+
+SDK source checked: https://developers.google.com/interactive-media-ads/docs/sdks/android/client-side/deprecation and https://developers.google.com/interactive-media-ads/docs/sdks/android/client-side/history. The initial 3.40.0 build failed the explicit desugaring metadata gate; that requirement was enabled rather than suppressed. The older-SDK intermediate build was not used as final verification.
+
+
+## Final build verification — 29 October 2026
+The final Java-17 Gradle run succeeded in 9m 3s with :app:assembleDebug :app:assembleRelease :app:testDebugUnitTest :app:assembleDebugAndroidTest, using the existing phase5-test-home.init.gradle, in-process Kotlin, --no-daemon --no-configuration-cache --no-watch-fs --max-workers=2 --console=plain. All 105 unit tests passed with zero failures/errors/skips. This replaces seven obsolete app-budget tests with six VMAP schedule tests and one ad-seek regression; the total stays 105. Release BuildConfig.VIEWER_TEST_ADS=false was read from generated output. The release APK is unsigned/not published. The new debug package is outputs/Vidoora-video-test-ads-debug.apk. Exact source/Gradle parity is checked separately. No backend, PostgreSQL, R2 or FFmpeg suite was rerun.
+
+Native check selected: two restored owner Watch/sharing UI methods plus opt-in VideoAdsSmokeTest. It uses an explicitly separate VidooraVideoAdsVerify AVD with private data/cache paths and port 5582. No phone installation or existing AVD clearing. The network smoke records adStarted and contentReady separately; a successful fallback does not establish ad delivery. Ten-minute runtime ad-break, real private HLS plus ads, fullscreen skip controls, network loss and physical-device acceptance remain separate from unit schedule verification.
+
+Initial native attempt ran three tests and failed: two stale assertions expected the previously removed Watch action (corrected to assert/click restored Watch); the opt-in sample failed with player error 4003 and native logs showed c2.goldfish.h264.decoder queueInputBuffer failure despite supported H264 format. The network smoke alone now selects Android software codecs with synchronous queueing to avoid this headless-emulator failure. Production ExoPlayer codec configuration is unchanged. Only instrumentation was rebuilt afterward (42s); unit/main APK results remain from the successful frozen production-source build. Initial evidence is retained in video-ads-native-tests-initial.txt and video-ads-evidence/video-ads-smoke. Corrected run results follow when executed.
+
+## Corrected native result
+The corrected isolated-emulator run completed OK (3 tests), 53.547 seconds, no skips. Private owner details restored Watch and its callback, shared owner details retained Watch/Share/Stop sharing, and the opt-in IMA sample recorded consentAllowed=true; adStarted=true; contentReady=true; playerError=0. The screenshot after the ad was visually checked and showed Google's sample content. This establishes observed demo pre-roll-to-content behavior for this network smoke using Android software codecs; it does not establish ten-minute runtime mid-rolls, real private HLS playback with ads or hardware/physical-device behavior. No ad click was performed. The initial decoder failure is retained rather than reclassified as a pass.
+
+Final evidence: outputs/video-ads-build-final.txt, video-ads-instrumentation-rebuild.txt, video-ads-native-tests-final.txt, video-ads-source-parity.json and video-ads-evidence-final/video-ads-smoke/outcome.txt and screen.png. The exact 148 source/test files and app Gradle script match the verification copy. Main debug/unsigned-release builds succeeded with 105 unit tests; the final instrumentation-only changes were compiled and executed afterward. No backend service restart/migration, private upload mutation or phone installation occurred.
+
+## Next phone check
+Keep the normal backend available and Run the updated Android app from Android Studio. In My Videos, open a processed video and tap Watch; then repeat as another account or guest using a valid shared link. Every new player session is eligible for its own demo pre-roll when UMP permits requests; no cooldown is inherited from another account. Play a video longer than ten minutes through a cue, then check ad completion/skip returns to the same content position, pause/background does not advance content cues, fullscreen preserves SDK controls, and resume checkpoints contain content time. No fill, load error or unavailable consent can guarantee an impression. Ads remain demo-only; paid ad-free subscriptions and live video-ad inventory are still unfinished.
+
+Superseded by the later Watch clarification: fullscreen interstitial before player entry, no in-player entry pre-roll, and actual elapsed foreground viewing time before a dedicated fullscreen video-ad break. See watch-interstitial.md for the current implementation and verification.
